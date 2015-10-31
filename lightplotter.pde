@@ -37,12 +37,8 @@ void setup() {
     exit();
   }
   size(800, 600);
-
-  table = new Table();
-  table.addColumn("Time");
-  table.addColumn("Light");
   port.bufferUntil(lf);
-  println("Running...");
+  reset();
 }
 
 void draw() {
@@ -58,7 +54,7 @@ void drawPlot() {
     }
   }
   if (currentPoint < numPoints && canPlot == true) {
-    if(currentPoint == 0)
+    if (currentPoint == 0)
       millis = 0;
     background(255);
     drawBorders();
@@ -74,9 +70,6 @@ void drawPlot() {
     totaltime = millis;
   } else {
     canPlot = false;
-    totalRuns++;
-    String num = nf(totalRuns, 4);
-    saveTable(table, "data/light-"+num+".csv");
   }
 }
 
@@ -112,16 +105,26 @@ void drawBorders() {
   textSize(16);
   text("Light Meter", box+5, box+20);
   textSize(12);
-  text("Press r to restart", box+5, box+40);
+  text("Press r to restart, and s to save", box+5, box+40);
   strokeWeight(1);
   textSize(12);
 }
 
 // Reset the plot
 void reset() {
+  table = new Table();
+  table.addColumn("Time");
+  table.addColumn("Light");
   time = 0;
   currentPoint = 0;
   canPlot = true;
+}
+
+void saveData() {
+  totalRuns++;
+  String num = nf(totalRuns, 4);
+  String dir = "data/light-"+num+".csv";
+  saveTable(table, dir);
 }
 
 void storeData() {
@@ -133,29 +136,30 @@ void storeData() {
 int failed = 0;
 
 void serialEvent(Serial port) {
-    String serial = "";
-    serial = port.readString();
-    serial = trim(serial);
-    int a[] = int(split(serial, ","));
-    if (a.length >= 2) {
-      light = a[0];
-      millis += a[1];
-      storeData();
-      failed = 0;
-    } 
-    else {
-      println("wrong type of data found, trying again");
-      failed++;
-      if (failed > 20) {
-        println("Data is incorrect, exiting.");
-        exit();
-      }
+  String serial = "";
+  serial = port.readString();
+  serial = trim(serial);
+  int a[] = int(split(serial, ","));
+  if (a.length >= 2) {
+    light = a[0];
+    millis += a[1];
+    storeData();
+    failed = 0;
+  } else {
+    println("wrong type of data found, trying again...");
+    failed++;
+    if (failed > 20) {
+      println("Data is incorrect, exiting.");
+      exit();
     }
-
+  }
 }
 
 void keyPressed() {
   if (key == 'r') {
     reset();
+  }
+  if (key == 's') {
+    saveData();
   }
 }
