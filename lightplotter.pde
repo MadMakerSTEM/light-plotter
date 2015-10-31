@@ -14,7 +14,7 @@ static int numPoints = 500;        // number of points on the graph
 int currentPoint = 0;
 float millis;
 float totaltime;
-float finaltime;
+int totalRuns = 0;
 int timer;
 int box = 20;
 int offset = 50;            // offset of x-axis, in pixels
@@ -72,11 +72,11 @@ void drawPlot() {
     }
     currentPoint++;
     totaltime = millis;
-    //timer = currentPoint;
   } else {
-    canPlot = false;   
-    saveTable(table, "data/light-####.csv");
-    println("Done!");
+    canPlot = false;
+    totalRuns++;
+    String num = nf(totalRuns, 4);
+    saveTable(table, "data/light-"+num+".csv");
   }
 }
 
@@ -93,13 +93,14 @@ void drawBorders() {
   for (int i = 0; i <= 50; i++) {
     float x = lerp(x1, x2, i/50.0);
     for (int j = 1; j < 6; j++) {
-      float y = map(j, 0, 5, height-box, box+100);
+      float yvalues = map(j, 0, 5, height-box, box+100);
+      float y = map(yvalues, 500, 1023, 500, 1000);
       point(x, y);
     }
   }
   for (int k = 0; k < 6; k++) {
-    float yval = lerp(500, 1023, k/5.0);
-    float y = map(yval, 500, 1023, height-box-5, box+100-5);
+    float yval = lerp(500, 1000, k/5.0);
+    float y = map(yval, 500, 1000, height-box-5, box+115-5);
     text(int(yval), box+5, y);
   }
   if (canPlot == false) {
@@ -129,8 +130,9 @@ void storeData() {
   newRow.setInt("Light", light);
 }
 
+int failed = 0;
+
 void serialEvent(Serial port) {
-  try {
     String serial = "";
     serial = port.readString();
     serial = trim(serial);
@@ -139,12 +141,17 @@ void serialEvent(Serial port) {
       light = a[0];
       millis += a[1];
       storeData();
+      failed = 0;
     } 
-  }
-  catch (Exception e) {
-    println("Found and error, continuing... ");
-    println(e);
-  }
+    else {
+      println("wrong type of data found, trying again");
+      failed++;
+      if (failed > 20) {
+        println("Data is incorrect, exiting.");
+        exit();
+      }
+    }
+
 }
 
 void keyPressed() {
