@@ -1,3 +1,26 @@
+/* Light Sensor plotter
+ 
+ This programs reads the Serial port and plots the value from the light
+ meter on the Arduino Esplora. 
+ 
+ Press r to reset the plot, and s to save the data. Data will be stored
+ in the 'data' folder. It's a csv for easy viewing in excel.
+ 
+ It also expects the time in milliseconds from the previous data point.
+ 
+ It must come in the format:
+ 
+ light,time
+ 
+ Where light is an integer between 0-1023, and time is the time in milliseconds
+ since the previous data point.
+ 
+ Author: Owen Brasier
+ Date: September 2015
+ http://challenge.madmaker.com.au
+ */
+
+
 import processing.serial.*;
 
 Serial port;
@@ -8,37 +31,31 @@ int temp, light;
 int time = 0;
 int lf = 10;
 boolean canPlot = true;
-static int MAX_TIME = 1000;
 
 static int numPoints = 500;        // number of points on the graph
 int currentPoint = 0;
 float millis;
 float totaltime;
 int totalRuns = 0;
-int timer;
 int box = 20;
-int offset = 50;            // offset of x-axis, in pixels
-int mode = 0;               // mode x, y or z (0, 1,2)
-float px, py;
-int[] accel = {0, 0, 0};   // array to store accelerometer values
 float[] data = new float[numPoints];
 float[] xAxis = new float[numPoints];
 
 void setup() {
   printArray(Serial.list());
-  String comPort = Serial.list()[0];    // should work on linux
-  //String comPort = Serial.list()[Serial.list().length-1];    // select the last, windows and mac
+  //String comPort = Serial.list()[0];    // should work on linux
+  String comPort = Serial.list()[Serial.list().length-1];    // select the last, windows and mac
   try {
     port = new Serial(this, comPort, 9600);
+    size(800, 600);
+    port.bufferUntil(lf);
+    reset();
   }
   catch (Exception e) {
     println(e);
     println("Exiting! Serial port error! Make sure you choose the correct one in the list above.");
     exit();
   }
-  size(800, 600);
-  port.bufferUntil(lf);
-  reset();
 }
 
 void draw() {
@@ -49,12 +66,11 @@ void drawPlot() {
   if (canPlot == false) {
     background(255);
     drawBorders();
-    for (int i = 1; i < numPoints; i++) {
+    for (int i = 1; i < numPoints; i++)
       line(xAxis[i-1], data[i-1], xAxis[i], data[i]);
-    }
   }
   if (currentPoint < numPoints && canPlot == true) {
-    if (currentPoint == 0)
+    if (currentPoint == 0)  // reset millis here in case there is a delay in showing the plot
       millis = 0;
     background(255);
     drawBorders();
@@ -63,9 +79,8 @@ void drawPlot() {
     data[currentPoint] = y;
     xAxis[currentPoint] = x;
     text("value: " + light, width-box-120, box+20);
-    for (int i = 1; i < currentPoint; i++) {
+    for (int i = 1; i < currentPoint; i++)
       line(xAxis[i-1], data[i-1], xAxis[i], data[i]);
-    }
     currentPoint++;
     totaltime = millis;
   } else {
@@ -83,6 +98,7 @@ void drawBorders() {
   fill(0);                            // make text black
   int x1 = box;
   int x2 = width-box;
+  // draw the horizontal dots
   for (int i = 0; i <= 50; i++) {
     float x = lerp(x1, x2, i/50.0);
     for (int j = 1; j < 6; j++) {
@@ -91,6 +107,7 @@ void drawBorders() {
       point(x, y);
     }
   }
+  // draw the y value text 500 to 1000
   for (int k = 0; k < 6; k++) {
     float yval = lerp(500, 1000, k/5.0);
     float y = map(yval, 500, 1000, height-box-5, box+115-5);
