@@ -58,23 +58,25 @@ void drawPlot() {
     }
   }
   if (currentPoint < numPoints && canPlot == true) {
+    if(currentPoint == 0)
+      millis = 0;
     background(255);
     drawBorders();
     float x = map(currentPoint, 0, numPoints, box, width-box);
     float y = map(light, 500, 1023, height-box, box+100);      
     data[currentPoint] = y;
     xAxis[currentPoint] = x;
-    text("value: " + light, width-box-100, box+20);
+    text("value: " + light, width-box-120, box+20);
     for (int i = 1; i < currentPoint; i++) {
       line(xAxis[i-1], data[i-1], xAxis[i], data[i]);
     }
     currentPoint++;
-    totaltime += millis;
-    timer = currentPoint;
+    totaltime = millis;
+    //timer = currentPoint;
   } else {
-    canPlot = false;
-    //saveTable(table, "data/temperature.csv");
-    //println("Done!");
+    canPlot = false;   
+    saveTable(table, "data/light-####.csv");
+    println("Done!");
   }
 }
 
@@ -95,22 +97,17 @@ void drawBorders() {
       point(x, y);
     }
   }
-  float output;
-  if (canPlot == false) {
-    timer = numPoints;
-    finaltime = totaltime;
-    output = (finaltime*(numPoints/(timer+1)));
-  } else {
-    timer = currentPoint;
-    totaltime = millis;
-    output = (totaltime*(numPoints/(timer+1)));
+  for (int k = 0; k < 6; k++) {
+    float yval = lerp(500, 1023, k/5.0);
+    float y = map(yval, 500, 1023, height-box-5, box+100-5);
+    text(int(yval), box+5, y);
   }
-  println(millis);
-  float x = map(mouseX, box, width-box, 0, output);
+  if (canPlot == false) {
+    float x = map(mouseX, box, width-box, 0, totaltime/1000);
+    text("time: " +x, width-box-120, box+40);
+  }
   float y = map(mouseY, height-box, box+100, 500, 1023);
-  // String ys = nf(e, 5, 3);
-  text("time: " +x, width-box-100, box+40);
-  text("y: " +y, width-box-100, box+60);
+  text("light: " +y, width-box-120, box+60);
   textSize(16);
   text("Light Meter", box+5, box+20);
   textSize(12);
@@ -123,29 +120,26 @@ void drawBorders() {
 void reset() {
   time = 0;
   currentPoint = 0;
-  millis = 0;
   canPlot = true;
 }
 
 void storeData() {
   TableRow newRow = table.addRow();
-  newRow.setInt("Time", time);
+  newRow.setInt("Time", int(millis));
   newRow.setInt("Light", light);
 }
 
 void serialEvent(Serial port) {
-  String serial = "";
-  serial = port.readString();
-  serial = trim(serial);
-  int a[] = int(split(serial, ","));
-  if (a.length >= 2) {
-    light = a[0];
-    millis += a[1];
-  }
-  println(light);
   try {
-    storeData();
-    time++;
+    String serial = "";
+    serial = port.readString();
+    serial = trim(serial);
+    int a[] = int(split(serial, ","));
+    if (a.length >= 2) {
+      light = a[0];
+      millis += a[1];
+      storeData();
+    } 
   }
   catch (Exception e) {
     println("Found and error, continuing... ");
