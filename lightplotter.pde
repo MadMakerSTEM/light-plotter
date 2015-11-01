@@ -45,9 +45,10 @@ void setup() {
   printArray(Serial.list());
   //String comPort = Serial.list()[0];    // should work on linux
   String comPort = Serial.list()[Serial.list().length-1];    // select the last, windows and mac
+  size(800, 600);
   try {
     port = new Serial(this, comPort, 9600);
-    size(800, 600);
+
     port.bufferUntil(lf);
     reset();
   }
