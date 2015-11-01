@@ -143,7 +143,7 @@ void saveData() {
   String num = nf(totalRuns, 4);
   String dir = "data/light-"+num+".csv";
   saveTable(table, dir);
-  saveFrame("light-####.jpg");
+  saveFrame("data/light-####.jpg");
 }
 
 void storeData() {
